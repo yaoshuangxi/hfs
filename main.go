@@ -41,9 +41,9 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	storeDir := filepath.Join(upload_dir, dir)
 	fp, err := extractFile(r, storeDir)
 	if err != nil {
-		io.WriteString(w, err.Error()+"\n")
+		io.WriteString(w, err.Error())
 	} else {
-		io.WriteString(w, filepath.Join(dir, filepath.Base(fp))+"\n")
+		io.WriteString(w, "[SUCCESS] " + filepath.Join(dir, filepath.Base(fp)))
 	}
 }
 
@@ -51,14 +51,14 @@ func remove(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.RequestURI, "/remove")
 	path = strings.TrimPrefix(path, "/")
 	if path == "" {
-		io.WriteString(w, "File or dir path is required\n")
+		io.WriteString(w, "File or dir path is required")
 		return
 	}
 	err := os.Remove(filepath.Join(upload_dir, path))
 	if err != nil {
-		io.WriteString(w, err.Error()+"\n")
+		io.WriteString(w, err.Error())
 	} else {
-		io.WriteString(w, "Removed\n")
+		io.WriteString(w, "[SUCCESS] Removed")
 	}
 }
 
@@ -70,9 +70,9 @@ func cmd(w http.ResponseWriter, r *http.Request) {
 	pCmd.Stdout = &out
 	err := pCmd.Run()
 	if err != nil {
-		io.WriteString(w, err.Error()+"\n")
+		io.WriteString(w, err.Error())
 	} else {
-		io.WriteString(w, out.String()+"\n")
+		io.WriteString(w, "[SUCCESS] " + out.String())
 	}
 }
 
