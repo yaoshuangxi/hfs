@@ -12,8 +12,16 @@ set -e
 curl -sSLO "https://raw.githubusercontent.com/carsonsx/hfs/master/docker/Dockerfile"
 
 # Stop and remove image if exists
-docker stop hfs
-docker rm hfs
+result=`docker ps | grep hfs`
+if [ -n "$result" ]
+then
+	docker stop hfs
+fi
+result=`docker ps -a | grep hfs`
+if [ -n "$result" ]
+then
+	docker rm hfs
+fi
 
 # Build image
 docker build -t carsonsx/hfs .
