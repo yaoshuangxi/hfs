@@ -1,6 +1,7 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -x
-set -e
+#set -e
+set -o pipefail
 #
 # This script is meant for quick & easy run latest image via:
 #   'curl -sSL https://raw.githubusercontent.com/carsonsx/hfs/master/docker/run.sh | sh'
