@@ -31,6 +31,8 @@ then
 	docker rmi carsonsx/hfs
 fi
 docker build -t carsonsx/hfs .
+rm -rf Dockerfile
 
 # Run
-docker run -itd --name hfs --restart=always -v ~/hfs/files:/files:rw -p 80:8100 carsonsx/hfs
+docker run -itd --name hfs --restart=always -v ~/hfs/files:/files:rw -p 80:8011 carsonsx/hfs
+docker logs -f hfs
