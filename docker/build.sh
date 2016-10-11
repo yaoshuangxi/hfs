@@ -29,10 +29,8 @@ docker build -t carsonsx/hfs .
 docker tag carsonsx/hfs carsonsx/hfs:0.1
 
 # Push image
-docker login --username carsonsx
 docker push carsonsx/hfs
 docker push carsonsx/hfs:0.1
-docker logout
 
 # Clean
 docker rmi carsonsx/hfs:0.1
