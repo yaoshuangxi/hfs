@@ -7,4 +7,4 @@
 docker stop hfs
 docker rm hfs
 docker build -t carsonsx/hfs .
-docker run -itd --name hfs -v ~/hfs/files:/files:rw -p 8011:8011 --restart=always carsonsx/hfs
+docker run -itd --name hfs -v ~/hfs/files:/files:rw -p 80:8011 --restart=always carsonsx/hfs
