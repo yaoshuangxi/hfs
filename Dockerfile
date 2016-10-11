@@ -2,7 +2,7 @@ FROM busybox
 
 MAINTAINER carsonsx <carsonsx@qq.com>
 
-COPY hfs /hfs
+ADD https://raw.githubusercontent.com/carsonsx/hfs/master/hfs /hfs
 
 CMD /hfs
 
