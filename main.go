@@ -16,22 +16,39 @@ import (
 )
 
 const (
-	DEFAULT_PORT    = "8011"
-	FORM_FILE       = "file"
-	STORAGE_PATH    = "files"
-	DATE_FORMAT     = "20060102"
+	DEFAULT_PORT = "8011"
+	FORM_FILE = "file"
+	STORAGE_PATH = "files"
+	DATE_FORMAT = "20060102"
 )
 
 var (
-	port       = DEFAULT_PORT
+	port = DEFAULT_PORT
 	upload_dir = STORAGE_PATH
 )
 
+func logRequest(r *http.Request) {
+	log.Printf("Request URI: %s", r.RequestURI)
+}
+
+func writeSuccess(w http.ResponseWriter, output string) {
+	write(w, "[Success] " + output)
+}
+
+func writeError(w http.ResponseWriter, output string) {
+	write(w, "[Error] " + output)
+}
+
+func write(w http.ResponseWriter, output string) {
+	io.WriteString(w, output)
+}
+
 func welcome(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "Welcome to HTTP File Server!\n")
+	write(w, "Welcome to HTTP File Server")
 }
 
 func upload(w http.ResponseWriter, r *http.Request) {
+	logRequest(r)
 	dir := strings.TrimPrefix(r.RequestURI, "/upload")
 	dir = strings.TrimPrefix(dir, "/")
 	byDate := r.FormValue("bydate")
@@ -41,28 +58,34 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	storeDir := filepath.Join(upload_dir, dir)
 	fp, err := extractFile(r, storeDir)
 	if err != nil {
-		io.WriteString(w, err.Error())
+		writeError(w, err.Error())
 	} else {
-		io.WriteString(w, "[SUCCESS] " + filepath.Join(dir, filepath.Base(fp)))
+		writeSuccess(w, "Uploaded " + filepath.Base(fp) + "")
 	}
 }
 
 func remove(w http.ResponseWriter, r *http.Request) {
+	logRequest(r)
 	path := strings.TrimPrefix(r.RequestURI, "/remove")
 	path = strings.TrimPrefix(path, "/")
 	if path == "" {
-		io.WriteString(w, "File or dir path is required")
+		log.Println("Path is required")
+		writeError(w, "Path is required")
 		return
 	}
-	err := os.Remove(filepath.Join(upload_dir, path))
+	err := os.RemoveAll(filepath.Join(upload_dir, path))
 	if err != nil {
-		io.WriteString(w, err.Error())
+		log.Println(err)
+		writeError(w, err.Error())
 	} else {
-		io.WriteString(w, "[SUCCESS] Removed")
+		output := "Removed " + path
+		log.Println(output)
+		writeSuccess(w, output)
 	}
 }
 
 func cmd(w http.ResponseWriter, r *http.Request) {
+	logRequest(r)
 	cmd := r.FormValue("cmd")
 	args := r.Form["args"]
 	pCmd := exec.Command(cmd, args...)
@@ -70,9 +93,9 @@ func cmd(w http.ResponseWriter, r *http.Request) {
 	pCmd.Stdout = &out
 	err := pCmd.Run()
 	if err != nil {
-		io.WriteString(w, err.Error())
+		writeError(w, err.Error())
 	} else {
-		io.WriteString(w, "[SUCCESS] " + out.String())
+		writeSuccess(w, out.String())
 	}
 }
 
@@ -80,7 +103,6 @@ func main() {
 	p := flag.String("p", port, "port to serve on")
 	d := flag.String("d", upload_dir, "the directory of static file to host")
 	flag.Parse()
-
 	port = *p
 	upload_dir = *d
 	http.HandleFunc("/upload", upload)
@@ -90,6 +112,6 @@ func main() {
 	http.HandleFunc("/execute", cmd)
 	http.HandleFunc("/", welcome)
 
-	log.Printf("Started HTTP File Server in port: %s\n", port)
-	log.Fatalln(http.ListenAndServe(":"+port, nil))
+	log.Printf("Started HTTP File Server on port: %s\n", port)
+	log.Fatalln(http.ListenAndServe(":" + port, nil))
 }
