@@ -30,6 +30,7 @@ const (
 var (
 	port = DEFAULT_PORT
 	upload_dir = STORAGE_PATH
+	password = ""
 )
 
 type ResponseData struct {
@@ -100,6 +101,16 @@ func remove(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+var downloadHandle = http.NotFoundHandler()
+
+func download(w http.ResponseWriter, r *http.Request) {
+	if password != "" && password != r.FormValue("password") {
+		http.Error(w, "403 wrong password", http.StatusForbidden)
+		return
+	}
+	downloadHandle.ServeHTTP(w, r)
+}
+
 func cmd(w http.ResponseWriter, r *http.Request) {
 	logRequest(r)
 	cmd := r.FormValue("cmd")
@@ -123,6 +134,7 @@ func main() {
 	d := flag.String("d", upload_dir, "the directory of static file to host")
 	flag.BoolVar(&showVersion, "version", false, "Print version information.")
 	flag.BoolVar(&showVersion, "v", false, "Print version information.")
+	flag.StringVar(&password, "password", "", "Set file server with simple password security mode.")
 	flag.Parse()
 
 	if showVersion {
@@ -132,10 +144,13 @@ func main() {
 
 	port = *p
 	upload_dir = *d
+
+	downloadHandle = http.StripPrefix("/download/", http.FileServer(http.Dir(upload_dir)))
+
 	http.HandleFunc("/upload", upload)
 	http.HandleFunc("/upload/", upload)
 	http.HandleFunc("/remove/", remove)
-	http.Handle("/download/", http.StripPrefix("/download/", http.FileServer(http.Dir(upload_dir))))
+	http.HandleFunc("/download/", download)
 	http.HandleFunc("/execute", cmd)
 	http.HandleFunc("/", welcome)
 	log.Println(GitCommit)
