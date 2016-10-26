@@ -126,7 +126,7 @@ func main() {
 	flag.Parse()
 
 	if showVersion {
-		fmt.Println(GetHumanVersion())
+		fmt.Printf("HFS %s", GetHumanVersion())
 		return
 	}
 
