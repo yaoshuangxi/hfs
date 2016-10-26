@@ -24,7 +24,10 @@ then
 	docker rm hfs
 fi
 
-VERSION="$(git describe --tags --always)"
+mv -f hfs_linux_amd64 hfs
+
+#VERSION="$(git describe --tags --always)"
+VERSION="$(./hfs -v)"
 
 # Build image
 docker build -t carsonsx/hfs .
