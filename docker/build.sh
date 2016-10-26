@@ -24,15 +24,18 @@ then
 	docker rm hfs
 fi
 
+VERSION="$(git describe --tags --always)"
+
 # Build image
 docker build -t carsonsx/hfs .
-docker tag carsonsx/hfs carsonsx/hfs:0.1
+docker tag carsonsx/hfs carsonsx/hfs:${VERSION}
 
 # Push image
+# Please run docker login first
 docker push carsonsx/hfs
-docker push carsonsx/hfs:0.1
+docker push carsonsx/hfs:${VERSION}
 
 # Clean
-docker rmi carsonsx/hfs:0.1
+docker rmi carsonsx/hfs:${VERSION}
 docker rmi carsonsx/hfs
 rm -rf Dockerfile
