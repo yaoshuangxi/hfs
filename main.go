@@ -155,7 +155,7 @@ func main() {
 	commands = strings.Replace("," + commands + ",", ",,", ",", -1)
 
 	if showVersion {
-		fmt.Printf("HFS %s", GetHumanVersion())
+		fmt.Printf("HFS %s\n", GetHumanVersion())
 		return
 	}
 
