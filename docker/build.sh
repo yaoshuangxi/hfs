@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -x
-set -e
+#set -e
 set -o pipefail
 #
 # This script is meant for quick & easy build and push hfs image via:
@@ -14,19 +14,14 @@ rm -f Dockerfile
 curl -sSLO "https://raw.githubusercontent.com/carsonsx/hfs/master/docker/Dockerfile"
 
 # Stop and remove image if exists
-result=`docker ps -a | grep hfs`
-if [ -n "$result" ]
-then
-	docker rm -f hfs
-fi
+docker rm -f hfs
 
-if [ -f hfs_linux_amd64 ]
-then
-    mv -f hfs_linux_amd64 hfs
-fi
+mv -f hfs_linux_amd64 hfs
+
+set -e
 
 #VERSION="$(git describe --tags --always)"
-VERSION="$(./hfs -v)"
+VERSION="$(./hfs --getversion)"
 
 # Build image
 docker build -t carsonsx/hfs .
@@ -38,6 +33,6 @@ docker push carsonsx/hfs
 docker push carsonsx/hfs:${VERSION}
 
 # Clean
-docker rmi carsonsx/hfs:${VERSION}
 docker rmi carsonsx/hfs
-rm -f Dockerfile build.sh hfs
+docker rmi carsonsx/hfs:${VERSION}
+rm -f Dockerfile hfs

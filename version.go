@@ -23,10 +23,8 @@ const VersionPrerelease = ""
 // GetHumanVersion composes the parts of the version in a way that's suitable
 // for displaying to humans.
 func GetHumanVersion() string {
-	version := Version
-	if GitDescribe != "" {
-		version = GitDescribe
-	}
+
+	version := GetVersion()
 
 	release := VersionPrerelease
 	if GitDescribe == "" && release == "" {
@@ -40,5 +38,13 @@ func GetHumanVersion() string {
 	}
 
 	// Strip off any single quotes added by the git information.
+	return strings.Replace(version, "'", "", -1)
+}
+
+func GetVersion() string {
+	version := Version
+	if GitDescribe != "" {
+		version = GitDescribe
+	}
 	return strings.Replace(version, "'", "", -1)
 }

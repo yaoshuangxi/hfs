@@ -143,11 +143,13 @@ func cmd(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	var showVersion bool
+	var getVersion bool
 
 	p := flag.String("p", port, "port to serve on")
 	d := flag.String("d", upload_dir, "the directory of static file to host")
 	flag.BoolVar(&showVersion, "version", false, "Print version information.")
 	flag.BoolVar(&showVersion, "v", false, "Print version information.")
+	flag.BoolVar(&getVersion, "getversion", false, "Get version.")
 	flag.StringVar(&password, "password", "", "Set file server with simple password security mode.")
 	flag.StringVar(&commands, "commands", "", "Which commands server can excuted. Add comma for multi. Do not allow any command by default.")
 	flag.Parse()
@@ -156,6 +158,9 @@ func main() {
 
 	if showVersion {
 		fmt.Printf("HFS %s\n", GetHumanVersion())
+		return
+	} else if getVersion {
+		fmt.Printf(GetVersion())
 		return
 	}
 
