@@ -10,21 +10,20 @@ set -o pipefail
 #
 
 # Download Dockerfile
+rm -f Dockerfile
 curl -sSLO "https://raw.githubusercontent.com/carsonsx/hfs/master/docker/Dockerfile"
 
 # Stop and remove image if exists
-result=`docker ps | grep hfs`
-if [ -n "$result" ]
-then
-	docker stop hfs
-fi
 result=`docker ps -a | grep hfs`
 if [ -n "$result" ]
 then
-	docker rm hfs
+	docker rm -f hfs
 fi
 
-mv -f hfs_linux_amd64 hfs
+if [ -f hfs_linux_amd64 ]
+then
+    mv -f hfs_linux_amd64 hfs
+fi
 
 #VERSION="$(git describe --tags --always)"
 VERSION="$(./hfs -v)"
@@ -41,4 +40,4 @@ docker push carsonsx/hfs:${VERSION}
 # Clean
 docker rmi carsonsx/hfs:${VERSION}
 docker rmi carsonsx/hfs
-rm -rf Dockerfile
+rm -f Dockerfile build.sh hfs
