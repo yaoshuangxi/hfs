@@ -31,6 +31,7 @@ var (
 	port = DEFAULT_PORT
 	upload_dir = STORAGE_PATH
 	password = ""
+	commands = ""
 )
 
 type ResponseData struct {
@@ -86,8 +87,9 @@ func remove(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.RequestURI, "/remove")
 	path = strings.TrimPrefix(path, "/")
 	if path == "" {
-		log.Println("path is required")
-		writeError(w, "path is required")
+		output := "the path in url is required"
+		log.Println(output)
+		writeError(w, output)
 		return
 	}
 	err := os.RemoveAll(filepath.Join(upload_dir, path))
@@ -114,6 +116,18 @@ func download(w http.ResponseWriter, r *http.Request) {
 func cmd(w http.ResponseWriter, r *http.Request) {
 	logRequest(r)
 	cmd := r.FormValue("cmd")
+	if cmd == "" {
+		output := "the parameter 'cmd' is required"
+		log.Println(output)
+		writeError(w, output)
+		return
+	}
+	if strings.Index(commands, "," + cmd + ",") == -1 {
+		output := fmt.Sprintf("server does not allow to execute '%s'", cmd)
+		log.Println(output)
+		writeError(w, output)
+		return
+	}
 	args := r.Form["args"]
 	pCmd := exec.Command(cmd, args...)
 	var out bytes.Buffer
@@ -135,7 +149,10 @@ func main() {
 	flag.BoolVar(&showVersion, "version", false, "Print version information.")
 	flag.BoolVar(&showVersion, "v", false, "Print version information.")
 	flag.StringVar(&password, "password", "", "Set file server with simple password security mode.")
+	flag.StringVar(&commands, "commands", "", "Which commands server can excuted. Add comma for multi. Do not allow any command by default.")
 	flag.Parse()
+
+	commands = strings.Replace("," + commands + ",", ",,", ",", -1)
 
 	if showVersion {
 		fmt.Printf("HFS %s", GetHumanVersion())
