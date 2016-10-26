@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"time"
 	"strings"
+	"encoding/json"
+	"fmt"
 )
 
 const (
@@ -20,6 +22,9 @@ const (
 	FORM_FILE = "file"
 	STORAGE_PATH = "files"
 	DATE_FORMAT = "20060102"
+
+	STATUS_SUCCESS = 0
+	STATUS_ERROR = 1
 )
 
 var (
@@ -27,24 +32,35 @@ var (
 	upload_dir = STORAGE_PATH
 )
 
+type ResponseData struct {
+	Status  int `json:"status"`
+	Message string `json:"message"`
+}
+
 func logRequest(r *http.Request) {
 	log.Printf("Request URI: %s", r.RequestURI)
 }
 
-func writeSuccess(w http.ResponseWriter, output string) {
-	write(w, "[Success] " + output)
+func writeSuccess(w http.ResponseWriter, message string) {
+	write(w, STATUS_SUCCESS, message)
 }
 
-func writeError(w http.ResponseWriter, output string) {
-	write(w, "[Error] " + output)
+func writeError(w http.ResponseWriter, err string) {
+	write(w, STATUS_ERROR, err)
 }
 
-func write(w http.ResponseWriter, output string) {
-	io.WriteString(w, output)
+func write(w http.ResponseWriter, status int, message string) {
+	data := ResponseData{status, message}
+	b, err := json.Marshal(data)
+	if err != nil {
+		io.WriteString(w, err.Error())
+		return
+	}
+	w.Write(b)
 }
 
 func welcome(w http.ResponseWriter, r *http.Request) {
-	write(w, "Welcome to HTTP File Server")
+	io.WriteString(w, "Welcome to HTTP File Server")
 }
 
 func upload(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +76,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, err.Error())
 	} else {
-		writeSuccess(w, "Uploaded " + filepath.Base(fp) + "")
+		writeSuccess(w, "uploaded " + filepath.Base(fp) + "")
 	}
 }
 
@@ -69,8 +85,8 @@ func remove(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.RequestURI, "/remove")
 	path = strings.TrimPrefix(path, "/")
 	if path == "" {
-		log.Println("Path is required")
-		writeError(w, "Path is required")
+		log.Println("path is required")
+		writeError(w, "path is required")
 		return
 	}
 	err := os.RemoveAll(filepath.Join(upload_dir, path))
@@ -78,7 +94,7 @@ func remove(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		writeError(w, err.Error())
 	} else {
-		output := "Removed " + path
+		output := "removed " + path
 		log.Println(output)
 		writeSuccess(w, output)
 	}
@@ -100,9 +116,20 @@ func cmd(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	var showVersion bool
+
 	p := flag.String("p", port, "port to serve on")
 	d := flag.String("d", upload_dir, "the directory of static file to host")
+	flag.BoolVar(&showVersion, "version", false, "Print version information.")
+	flag.BoolVar(&showVersion, "v", false, "Print version information.")
 	flag.Parse()
+
+	if showVersion {
+		fmt.Println(GetHumanVersion())
+		return
+	}
+
 	port = *p
 	upload_dir = *d
 	http.HandleFunc("/upload", upload)
@@ -111,7 +138,8 @@ func main() {
 	http.Handle("/download/", http.StripPrefix("/download/", http.FileServer(http.Dir(upload_dir))))
 	http.HandleFunc("/execute", cmd)
 	http.HandleFunc("/", welcome)
-
+	log.Println(GitCommit)
+	log.Println(GitDescribe)
 	log.Printf("Started HTTP File Server on port: %s\n", port)
 	log.Fatalln(http.ListenAndServe(":" + port, nil))
 }
