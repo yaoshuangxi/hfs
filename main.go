@@ -15,6 +15,8 @@ import (
 	"strings"
 	"encoding/json"
 	"fmt"
+	"github.com/carsonsx/hfs/util"
+	"strconv"
 )
 
 const (
@@ -22,7 +24,6 @@ const (
 	FORM_FILE = "file"
 	STORAGE_PATH = "files"
 	DATE_FORMAT = "20060102"
-
 	STATUS_SUCCESS = 0
 	STATUS_ERROR = 1
 )
@@ -32,6 +33,7 @@ var (
 	upload_dir = STORAGE_PATH
 	password = ""
 	commands = ""
+	downloadHandle http.Handler
 )
 
 type ResponseData struct {
@@ -74,7 +76,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		dir = filepath.Join(time.Now().Format(DATE_FORMAT), dir)
 	}
 	storeDir := filepath.Join(upload_dir, dir)
-	fp, err := extractFile(r, storeDir)
+	fp, err := util.ExtractFile(r, FORM_FILE, storeDir)
 	if err != nil {
 		writeError(w, err.Error())
 	} else {
@@ -103,13 +105,37 @@ func remove(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var downloadHandle = http.NotFoundHandler()
-
 func download(w http.ResponseWriter, r *http.Request) {
 	if password != "" && password != r.FormValue("password") {
 		http.Error(w, "403 wrong password", http.StatusForbidden)
 		return
 	}
+	if version := r.FormValue("version"); version != "" {
+		http.StripPrefix("/download/", http.FileServer(http.Dir(upload_dir)))
+		path := strings.TrimPrefix(r.URL.Path, "/download/")
+		ext := filepath.Ext(path)
+		fullBasename := filepath.Join(upload_dir, strings.TrimRight(path, ext))
+		path = filepath.Join(fullBasename + "_" + version + ext)
+		if _, err := os.Stat(path); err == nil {
+			http.ServeFile(w, r, path)
+			return
+		} else  {
+			log.Printf("check if version %s is current version.\n", version)
+			versionCode, _ := strconv.Atoi(version)
+			var err error
+			idx := 0
+			for err == nil {
+				idx++
+				_, err = os.Stat(filepath.Join(fullBasename + "_" + strconv.Itoa(idx) + ext))
+			}
+			if versionCode != idx {
+				log.Printf("the version %s was not found,\n", version)
+				http.NotFound(w, r)
+				return
+			}
+		}
+	}
+
 	downloadHandle.ServeHTTP(w, r)
 }
 

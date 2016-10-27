@@ -1,6 +1,4 @@
-// Copyright 2016 carsonsx. All rights reserved.
-
-package main
+package util
 
 import (
 	"errors"
@@ -13,19 +11,8 @@ import (
 	"strings"
 )
 
-func mkdir(dir string) error {
-	if fi, err := os.Stat(dir); os.IsNotExist(err) {
-		if fi != nil && !fi.IsDir() {
-			dir = filepath.Dir(dir)
-			return mkdir(dir)
-		}
-		return os.MkdirAll(dir, os.ModePerm)
-	}
-	return nil
-}
-
-func extractFile(r *http.Request, storePath string) (fp string, err error) {
-	file, fh, err := r.FormFile(FORM_FILE)
+func ExtractFile(r *http.Request, input, storePath string) (fp string, err error) {
+	file, fh, err := r.FormFile(input)
 	if err != nil {
 		log.Printf("get form file failed: %v\n", err)
 		return "", err
@@ -39,14 +26,26 @@ func extractFile(r *http.Request, storePath string) (fp string, err error) {
 	if fn == "" {
 		return "", errors.New("filename cannot be empty!!!")
 	}
-	mkdir(storePath)
+	Mkdir(storePath)
 	fp = filepath.Join(storePath, fn)
-	_, err = os.Stat(fp)
-	for idx := 1; err == nil; idx++ {
-		ext := filepath.Ext(fn)
-		fp = filepath.Join(storePath, strings.TrimRight(fn, ext)+"_"+strconv.Itoa(idx)+ext)
-		_, err = os.Stat(fp)
+	idx := 0
+	newfp := fp
+	_, err = os.Stat(newfp)
+	for err == nil {
+		idx++;
+		ext := filepath.Ext(newfp)
+		newfp = filepath.Join(storePath, strings.TrimRight(fn, ext) + "_" + strconv.Itoa(idx) + ext)
+		_, err = os.Stat(newfp)
 	}
+
+	if idx > 0 {
+		err = os.Rename(fp, newfp)
+		if err != nil {
+			return "", err
+		}
+		log.Printf("renamed %s to %s\n", fp, newfp)
+	}
+
 	f, err := os.Create(fp)
 	if err != nil {
 		log.Printf("crate file failed: %v\n", err)
