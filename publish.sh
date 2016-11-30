@@ -32,4 +32,4 @@ docker push carsonsx/hfs:${VERSION}
 # Clean
 docker rmi carsonsx/hfs
 docker rmi carsonsx/hfs:${VERSION}
-rm -f Dockerfile hfs
+rm -f hfs
