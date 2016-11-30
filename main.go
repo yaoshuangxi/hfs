@@ -15,6 +15,7 @@ import (
 	"strings"
 	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 const (
@@ -74,7 +75,8 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		dir = filepath.Join(time.Now().Format(DATE_FORMAT), dir)
 	}
 	storeDir := filepath.Join(upload_dir, dir)
-	fp, err := extractFile(r, storeDir)
+	b ,_ := strconv.ParseBool(r.FormValue("override"))
+	fp, err := extractFile(r, storeDir, b)
 	if err != nil {
 		writeError(w, err.Error())
 	} else {
