@@ -20,6 +20,7 @@ set -e
 # fetch version
 cd docker
 VERSION="$(./hfs --getversion)"
+echo 'hfs ${VERSION}'
 
 # Build image
 docker build -t carsonsx/hfs .
