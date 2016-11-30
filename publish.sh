@@ -7,7 +7,7 @@ docker login
 docker pull golang
 
 # build in docker
-docker run --rm -v "$PWD":/hfs -w /hfs golang ./build.sh
+docker run --rm -v "$PWD":/go/src/github.com/carsonsx/hfs -w /go/src/github.com/carsonsx/hfs golang ./build.sh
 
 # copy build result
 \cp -f bin/hfs_linux_amd64 docker/hfs
