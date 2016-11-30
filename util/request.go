@@ -11,8 +11,9 @@ import (
 	"strings"
 )
 
-func ExtractFile(r *http.Request, input, storePath string) (fp string, err error) {
+func ExtractFile(r *http.Request, input, storePath string, override bool) (fp string, err error) {
 	file, fh, err := r.FormFile(input)
+
 	if err != nil {
 		log.Printf("get form file failed: %v\n", err)
 		return "", err
@@ -28,14 +29,20 @@ func ExtractFile(r *http.Request, input, storePath string) (fp string, err error
 	}
 	Mkdir(storePath)
 	fp = filepath.Join(storePath, fn)
+
 	idx := 0
 	newfp := fp
-	_, err = os.Stat(newfp)
-	for err == nil {
-		idx++;
-		ext := filepath.Ext(newfp)
-		newfp = filepath.Join(storePath, strings.TrimRight(fn, ext) + "_" + strconv.Itoa(idx) + ext)
-		_, err = os.Stat(newfp)
+	if _, err = os.Stat(newfp); err == nil {
+		if (override) {
+			os.Remove(fp)
+		} else {
+			for err == nil {
+				idx++;
+				ext := filepath.Ext(newfp)
+				newfp = filepath.Join(storePath, strings.TrimRight(fn, ext) + "_" + strconv.Itoa(idx) + ext)
+				_, err = os.Stat(newfp)
+			}
+		}
 	}
 
 	if idx > 0 {

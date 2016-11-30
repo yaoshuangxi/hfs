@@ -71,12 +71,16 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	logRequest(r)
 	dir := strings.TrimPrefix(r.RequestURI, "/upload")
 	dir = strings.TrimPrefix(dir, "/")
+	if index := strings.Index(dir, "?"); index > 0 {
+		dir = dir[0:index]
+	}
 	byDate := r.FormValue("bydate")
 	if byDate == "true" {
 		dir = filepath.Join(time.Now().Format(DATE_FORMAT), dir)
 	}
 	storeDir := filepath.Join(upload_dir, dir)
-	fp, err := util.ExtractFile(r, FORM_FILE, storeDir)
+	b ,_ := strconv.ParseBool(r.FormValue("override"))
+	fp, err := util.ExtractFile(r, FORM_FILE, storeDir, b)
 	if err != nil {
 		writeError(w, err.Error())
 	} else {
