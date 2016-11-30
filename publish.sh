@@ -33,3 +33,6 @@ docker push carsonsx/hfs:${VERSION}
 docker rmi carsonsx/hfs
 docker rmi carsonsx/hfs:${VERSION}
 rm -f hfs
+
+# Logout
+docker logout
