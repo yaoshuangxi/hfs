@@ -12,6 +12,7 @@ import (
 )
 
 func ExtractFile(r *http.Request, input, storePath string, override bool) (fp string, err error) {
+	r.ParseMultipartForm(100000000)
 	file, fh, err := r.FormFile(input)
 
 	if err != nil {
