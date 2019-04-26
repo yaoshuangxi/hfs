@@ -1,4 +1,4 @@
-// Copyright 2016 carsonsx. All rights reserved.
+// Copyright 2016 yaoshuangxi. All rights reserved.
 
 package main
 
@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	DEFAULT_PORT = "8011"
+	DEFAULT_PORT = "24661"
 	FORM_FILE = "file"
 	STORAGE_PATH = "files"
 	DATE_FORMAT = "20060102"
@@ -29,11 +29,12 @@ const (
 )
 
 var (
-	port = DEFAULT_PORT
-	upload_dir = STORAGE_PATH
-	password = ""
-	commands = ""
-	downloadHandle http.Handler
+	port             = DEFAULT_PORT
+	upload_dir       = STORAGE_PATH
+	password         = ""
+	downloadPassword = ""
+	commands         = ""
+	downloadHandle   http.Handler
 )
 
 type ResponseData struct {
@@ -68,6 +69,11 @@ func welcome(w http.ResponseWriter, r *http.Request) {
 }
 
 func upload(w http.ResponseWriter, r *http.Request) {
+	if password != "" && password != r.FormValue("password") {
+		log.Printf("wrong password: %s\n", r.FormValue("password"))
+		http.Error(w, "403 wrong password", http.StatusForbidden)
+		return
+	}
 	logRequest(r)
 	dir := strings.TrimPrefix(r.RequestURI, "/upload")
 	dir = strings.TrimPrefix(dir, "/")
@@ -89,6 +95,10 @@ func upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func remove(w http.ResponseWriter, r *http.Request) {
+	if password != "" && password != r.FormValue("password") {
+		http.Error(w, "403 wrong password", http.StatusForbidden)
+		return
+	}
 	logRequest(r)
 	path := strings.TrimPrefix(r.RequestURI, "/remove")
 	path = strings.TrimPrefix(path, "/")
@@ -110,7 +120,7 @@ func remove(w http.ResponseWriter, r *http.Request) {
 }
 
 func download(w http.ResponseWriter, r *http.Request) {
-	if password != "" && password != r.FormValue("password") {
+	if downloadPassword != "" && downloadPassword != r.FormValue("password") {
 		http.Error(w, "403 wrong password", http.StatusForbidden)
 		return
 	}
@@ -144,6 +154,10 @@ func download(w http.ResponseWriter, r *http.Request) {
 }
 
 func cmd(w http.ResponseWriter, r *http.Request) {
+	if password != "" && password != r.FormValue("password") {
+		http.Error(w, "403 wrong password", http.StatusForbidden)
+		return
+	}
 	logRequest(r)
 	cmd := r.FormValue("cmd")
 	if cmd == "" {
@@ -175,12 +189,12 @@ func main() {
 	var showVersion bool
 	var getVersion bool
 
-	p := flag.String("p", port, "port to serve on")
-	d := flag.String("d", upload_dir, "the directory of static file to host")
+	p := flag.String("port", port, "port to serve on")
+	d := flag.String("directory", upload_dir, "the directory of static file to host")
 	flag.BoolVar(&showVersion, "version", false, "Print version information.")
-	flag.BoolVar(&showVersion, "v", false, "Print version information.")
-	flag.BoolVar(&getVersion, "getversion", false, "Get version.")
-	flag.StringVar(&password, "password", "", "Set file server with simple password security mode.")
+	flag.BoolVar(&getVersion, "get-version", false, "Get version.")
+	flag.StringVar(&password, "password", "", "Set file server with simple password security mode except downloading.")
+	flag.StringVar(&downloadPassword, "download-password", "", "Set file server downloading with simple password security mode.")
 	flag.StringVar(&commands, "commands", "", "Which commands server can excuted. Add comma for multi. Do not allow any command by default.")
 	flag.Parse()
 
@@ -205,8 +219,14 @@ func main() {
 	http.HandleFunc("/download/", download)
 	http.HandleFunc("/execute", cmd)
 	http.HandleFunc("/", welcome)
-	log.Println(GitCommit)
-	log.Println(GitDescribe)
+	//log.Println(GitCommit)
+	//log.Println(GitDescribe)
+	if password != "" {
+		log.Printf("upload/remove/excute password: %s\n", password)
+	}
+	if downloadPassword != "" {
+		log.Printf("download password: %s\n", downloadPassword)
+	}
 	log.Printf("Started HTTP File Server on port: %s\n", port)
 	log.Fatalln(http.ListenAndServe(":" + port, nil))
 }
